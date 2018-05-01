@@ -19,7 +19,7 @@
 + run python score.py filename e.g. python score.py T0_ID130007_Center_seq1
 
 
-# Plot ROC Curve
+# plot the ROC curve
 
 ## usage
 
