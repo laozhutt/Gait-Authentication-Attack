@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">SensorDemo</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="state">State:</string>
+    <string name="number">Number:</string>
+    <string name="participant">Participant:</string>
+    <string name="start">Start</string>
+    <string name="end">Stop</string>
+    <string name="write">configuration</string>
+    <string name="filter_vcode">0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
+</resources>
