@@ -49,3 +49,19 @@ class TestCycleDetection(TestCase):
             [83, 104], [104, 125], [125, 146], [146, 167],
             [62, 83], [41, 62], [20, 41], [0, 20]
         ], cycles)
+
+    def test_get_local_minimum_indices_new(self):
+        # Arrange.
+        serial = [
+            5, 3, 1, 3, 4,
+            5, 3, 1, 3, 4,
+            5, 3, 1, 3, 4,
+            5, 3, 1, 3, 4,
+        ]
+
+        # Action.
+        minimums = CycleDetection.get_local_minimum_indices_new(serial, 0, len(serial))
+
+        # Assert.
+        print minimums
+

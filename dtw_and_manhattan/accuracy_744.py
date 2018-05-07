@@ -14,8 +14,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-ROOT = '/home/tiantian/onecycleattack/mimicry-master/experiment/cycle_generation_from_dataset_774'
-RESULTS_DIR = 'target'
+ROOT = '/home/tiantian/onecycleattack/Gait-Authentication-Attack/dtw_and_manhattan'
+RESULTS_DIR = 'target/744'
+THRESHOLD_DIR = 'target/th_744'
 
 
 
@@ -33,31 +34,64 @@ if __name__ == '__main__':
 	filepath = os.path.join(ROOT, RESULTS_DIR)
 	file_list = os.listdir(filepath)
 
+	'''
+	1. Normalization 
+	'''
+	threshold_dir = os.path.join(ROOT, THRESHOLD_DIR)
+	if not os.path.exists(threshold_dir):
+		os.system('mkdir -p {0}'.format(threshold_dir))
+
+	for filename in file_list:
+		with open(os.path.join(filepath, filename),'r') as f:
+			max_num = 0.0
+			min_num = 1000.0
+			for line in f.readlines():
+				num = float(line.strip().split(' ')[1])
+				if num < min_num:
+					min_num = num
+				if num > max_num:
+					max_num = num
+			with open(os.path.join(ROOT, THRESHOLD_DIR, filename),'w') as tf:
+				tf.write(str(max_num))
+				tf.write('\n')
+				tf.write(str(min_num))
+				tf.flush()
+
 
 	'''
-	1. Calculate the FAR and FRR.
+	2. Calculate the FAR and FRR.
 	'''
+	if os.path.exists(os.path.join(ROOT, 'result.txt')):
+		os.remove(os.path.join(ROOT, 'result.txt'))
+
 
 	th = 0.0
-	while(th <10):
+	while(th <1):
 		with open(os.path.join(ROOT, 'result.txt'), 'a') as r:
 
 			for filename in file_list:
-				with open(os.path.join(filepath, filename)) as f:
+				with open(os.path.join(ROOT, THRESHOLD_DIR, filename),'r') as rf:
+					lines = rf.readlines()
+					max_num = float(lines[0].strip())
+					min_num = float(lines[1].strip())
+
+
+				with open(os.path.join(filepath, filename),'r') as f:
 					for line in f.readlines():
+						acc = (float(line.strip().split(' ')[1]) - min_num) / (max_num - min_num)
 
 						#find the acc of owner
-						if line.strip().split(' ')[0].split('_')[1] in filename:
+						if line.strip().split(' ')[0] in filename:
 							#print line.strip().split(' ')[0].split('_')[1]
 							#print filename
 							#print line.strip().split(' ')[1]
-							if float(line.strip().split(' ')[1]) <= th:
+							if acc <= th:
 								TP = TP + 1
 							else:
 								FN = FN + 1
 						#acc of other
 						else:
-							if float(line.strip().split(' ')[1]) <= th:
+							if acc <= th:
 								FP = FP + 1
 							else:
 								TN = TN + 1
@@ -74,11 +108,11 @@ if __name__ == '__main__':
 			r.write(str(FAR) + ' ' + str(FRR) + '\n')
 			r.flush()
 			print 'Threshold ' + str(th) + ' down.' 
-		th = th + 0.1
+		th = th + 0.01
 
 
 	'''
-	2. Plot curve.
+	3. Plot curve.
 	'''
 	font = {
 		'family' : 'Bitstream Vera Sans',
@@ -100,7 +134,7 @@ if __name__ == '__main__':
 	plt.xlabel('FAR')
 
 	#plt.show()
-	plt.savefig("pic" + ".png")
+	plt.savefig("pic744" + ".png")
 
 
 

@@ -1,11 +1,13 @@
 """
 Core of cycle detection.
 
-author: cyrus and tiantian
+author: cyrus
 date: 2018-4-19
 """
 import scipy.spatial.distance as distance
 import numpy as np
+
+from cycle_detection import tools
 
 
 class CycleDetection:
@@ -67,11 +69,40 @@ class CycleDetection:
         self.baseline = baseline  # only for test
 
         # Calculate the distance scores bidirectionally.
+        # Algorithm 1
         right_minimums = self.get_local_minimum_indices(end, self.serial_length, baseline)  # [start, end) [end, ...
         left_minimums = self.get_local_minimum_indices(0, start, baseline)  # [0, start), [start, ...
-        cycle_length = np.mean([start - left_minimums[-1], right_minimums[0] - start])
+        cycle_length1 = np.mean([start - left_minimums[-1], right_minimums[0] - start])
+
+        # Algorithm 2
+        dist = self.get_distance_to_subset(baseline)
+        dist = tools.get_exponential_moving_average_order_3(dist, 0.3)
+        dist = tools.get_exponential_moving_average_order_3(dist, 0.3)
+        minimums = self.get_local_minimum_indices_new(dist, 0, len(dist))
+        for i in range(0, len(minimums)):
+            minimums[i] -= 5
+        cycle_length = int(np.mean(np.diff(minimums)))
+
+        print '>>>', 'cycle length', 'old way', cycle_length1, 'new', cycle_length
 
         return cycle_length
+
+    def get_distance_to_subset(self, baseline):
+        distance_ = []
+        for i in range(0, self.serial_length - len(baseline)):
+            distance_.append(distance.euclidean(baseline, self.serial[i: i + len(baseline)]))
+        return distance_
+
+    @staticmethod
+    def get_local_minimum_indices_new(data, start, end):
+        local_minimum_indices = []
+        for i in range(start, end - 1):
+            if data[i - 1] > data[i] and data[i + 1] > data[i]:
+                local_minimum_indices.append(i)
+        if len(local_minimum_indices) == 0:  # monotony
+            local_minimum_indices.append(data.index(min(data[start], data[end - 1])))
+
+        return local_minimum_indices
 
     def get_local_minimum_indices(self, start, end, baseline=None):
         """Get indices to local minimums of euclidean distance
@@ -94,7 +125,7 @@ class CycleDetection:
         for i in range(1, len(distance_) - 1):
             if distance_[i - 1] > distance_[i] and distance_[i + 1] > distance_[i]:
                 local_minimum_indices.append(i + start)
-        if len(local_minimum_indices) == 0: # monotony
+        if len(local_minimum_indices) == 0:  # monotony
             local_minimum_indices.append(distance_.index(min(distance_[0], distance_[-1])) + start)
 
         self.minimums.append(local_minimum_indices)  # only for test
@@ -186,17 +217,7 @@ class CycleDetection:
         :return: A list contains (start, end)s of all cycles.
         """
         # Find a minimum point around the center of this serial.
-        minimum_indices = np.array(
-            self.get_local_minimum_indices(0, self.serial_length)) # not all minimums are what we want
-        middle = minimum_indices[len(minimum_indices) / 2] # index in the middle
-        minimum_indices = minimum_indices[np.where(
-            middle - self.cycle_length / 2 < minimum_indices
-        )]
-        p_start = minimum_indices[np.where(
-            middle + self.cycle_length / 2 > minimum_indices
-        )]
-        p_start_map = [self.serial[e] for e in p_start]
-        p_start = p_start[p_start_map.index(min(p_start_map))] # start = start from a minimum point around the center
+        p_start = self.find_minimum_index_around_center()
 
         # Find the other minimum points we want can be starts of new walking cycles bidirectionally.
         cycle_boundary_indices = self.search(p_start)  # to right
@@ -205,6 +226,32 @@ class CycleDetection:
         self.cycle_boundary_indices = cycle_boundary_indices  # only for test
 
         return cycle_boundary_indices
+
+    def find_minimum_index_around_center(self):
+        # Algorithm 1
+        minimum_indices = np.array(
+            self.get_local_minimum_indices(0, self.serial_length))  # not all minimums are what we want
+        middle = minimum_indices[len(minimum_indices) / 2]  # index in the middle
+        minimum_indices = minimum_indices[np.where(
+            middle - self.cycle_length / 2 < minimum_indices
+        )]
+        p_start = minimum_indices[np.where(
+            middle + self.cycle_length / 2 > minimum_indices
+        )]
+        p_start_map = [self.serial[e] for e in p_start]
+        p_start1 = p_start[p_start_map.index(min(p_start_map))]  # start = start from a minimum point around the center
+
+        # Algorithm 2
+        middle_index = self.serial_length / 2
+        left_index = int(middle_index - 1.5 * self.cycle_length)
+        right_index = int(middle_index + 1.5 * self.cycle_length)
+        minimum_indices = self.get_local_minimum_indices_new(self.serial, left_index, right_index)
+        p_start_map = [self.serial[e] for e in minimum_indices]
+        p_start = minimum_indices[
+            p_start_map.index(min(p_start_map))]  # start = start from a minimum point around the center
+
+        print('>>> search start from {0}(old), {1}(new)'.format(p_start1, p_start))
+        return p_start
 
     def search(self, start, reversed_=False):
         """Do search.

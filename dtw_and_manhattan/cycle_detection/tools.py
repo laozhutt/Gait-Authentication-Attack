@@ -1,10 +1,14 @@
 """
 Tools for cycle detection
 
-author: cyrus and tiantian
+author: cyrus
 date: 2018-4-19
 """
+import os
+
 import numpy as np
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 from scipy import interpolate
 from scipy.spatial.distance import euclidean
 from fastdtw import fastdtw
@@ -28,7 +32,7 @@ def get_interpolation(timestamps, data, target_sample_rate=50, method='linear'):
     interval = 1.0 / target_sample_rate
 
     target_timestamps = np.arange(0, timestamps[-1] + interval / 2, interval).tolist()  # construct target timestamps
-    target_timestamps[-1] = min(target_timestamps[-1], timestamps[-1]) # avoid overflow caused by interval/2
+    target_timestamps[-1] = min(target_timestamps[-1], timestamps[-1])  # avoid overflow caused by interval/2
 
     if not isinstance(data[0], (tuple, list)):
         data = [data]
@@ -36,7 +40,6 @@ def get_interpolation(timestamps, data, target_sample_rate=50, method='linear'):
 
     evaluate_interpolations = [interpolate.interp1d(timestamps, d) for d in data]  # get evaluation functions
     target_data = [e_i(target_timestamps).tolist() for e_i in evaluate_interpolations]  # evaluate
-
 
     return target_timestamps, target_data
 
@@ -48,7 +51,7 @@ def get_exponential_moving_average_order_1(data, factor):
     :param factor: Smoothing factor.
     :return: An array after smoothing.
     """
-    data_smoothed = [data[0]] # there are several other strategies for setting up value of the first
+    data_smoothed = [data[0]]  # there are several other strategies for setting up value of the first
     for i in range(1, len(data)):
         t = data[i] * factor + data_smoothed[i - 1] * (1 - factor)  # as formula
         data_smoothed.append(t)
@@ -120,21 +123,14 @@ def remove_odd_cycles(data, indices):
     mean = np.mean(distances)
     std = np.std(distances)
 
-    # Get indices to be removed which are not in [mean-2*std, mean+2*std].
-    to_be_removed = []
+    # Get and remove indices which are not in [mean-2*std, mean+2*std].
+    indices_copy = list(indices)
     for i, distance in enumerate(distances):
         if distance < mean - 2 * std or distance > mean + 2 * std:
-            to_be_removed.append(i)
+            print('>>> remove cycle {0}'.format(indices_copy[i]))
+            indices.remove(indices_copy[i])
 
-    # Remove these abnormal indices.
-    indices_result = []
-    for index in indices:
-        if index in to_be_removed:
-            continue
-        else:
-            indices_result.append(index)
-
-    return indices_result
+    return indices
 
 
 def get_splitted_data(data, indices):
@@ -157,20 +153,69 @@ def get_splitted_magnitude_data(data, indices):
     data = np.array(data).T
     return [data[start:end].tolist() for (start, end) in indices]
 
-def cal_fastdtw(cycle1, cycle2):
-    """Return fast dtw distance of the two cycles.
 
-    :param cycle1: the first cycle stored the normalized maginitude data.
-    :param cycle2: the second cycle stored the normalized maginitude data.
-    :return: Return the dtw distance. NOte: when the lengths of the data in two cycle is the same, dtw and manhattan are the same.
-    """
+def show_cycles(data, indices, title=None, path=None, save=True):
+    plt.figure()
+    if not isinstance(data[0], (tuple, list)):
+        data = [data]
+    for d in data:
+        for (start, end) in indices:
+            x = np.arange(0, end - start)
+            y = d[start: end]
+            if len(x) != len(y):
+                continue
+            plt.plot(x, y)
+    if title is not None:
+        plt.title(title)
+    if save and path is not None:
+        plt.savefig(path)
+        print('>>> save pic: {0}'.format(path))
+    else:
+        plt.show()
+    plt.close()
 
-    min_distance, path = fastdtw(cycle1, cycle2, dist=euclidean)
-    
-    # for i in range(len(cycle1)):
-    #     distance, path = fastdtw(np.roll(cycle1,i), cycle2, dist=euclidean)
-    #     if distance < min_distance:
-    #         min_distance = distance
-    return min_distance
+
+def show_cycles_by_time(timestamp, data, indices, title=None, path=None, save=True):
+    plt.figure()
+    if not isinstance(data[0], (tuple, list)):
+        data = [data]
+    for d in data:
+        plt.plot(timestamp, d)
+        for cycle in indices:
+            x = [timestamp[c] for c in cycle]
+            y = [d[c] for c in cycle]
+            plt.plot(x, y)
+    if title is not None:
+        plt.title(title)
+    if save and path is not None:
+        plt.savefig(path)
+        print('>>> save pic: {0}'.format(path))
+    else:
+        plt.show()
+
+    plt.close()
 
 
+def show_points(x, data):
+    plt.figure()
+    plt.plot(data)
+    for i in x:
+        plt.plot(i, data[i], '*')
+    plt.show()
+    plt.close()
+
+
+def show_nd(timestamp, data):
+    plt.figure()
+    if not isinstance(data[0], (tuple, list)):
+        data = [data]
+    for d in data:
+        plt.plot(timestamp, d)
+    plt.show()
+    plt.close()
+
+
+def check_result_dir(result_dir):
+    if os.path.exists(result_dir):
+        os.system('rm -r {0}'.format(result_dir))
+    os.system('mkdir -p {0}'.format(result_dir))
