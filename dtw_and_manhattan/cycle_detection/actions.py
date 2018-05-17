@@ -64,8 +64,9 @@ class CycleDetectionAction:
             if len(timestamps) == 0:
                 continue
             timestamps_interpolated, data_interpolated = \
-            tools.get_interpolation(timestamps, data, target_sample_rate=self.sample_rate)   #get 101 sample totally
+            tools.get_interpolation(timestamps, data, target_sample_rate=self.sample_rate)  
             with open(os.path.join(target_dir, str(i)), 'w') as f:
+                #for line in data:
                 for line in data_interpolated[0]:
                     #print line
                     f.write(str(line))
@@ -122,8 +123,8 @@ class CycleDetectionAction:
         self.data_splitted = tools.get_splitted_data(self.data, self.real_indices)
 
         # modified by tiantian, 1D interpolation on magnitude data, each cycle is normalized to a length of k observations, k = 100
-        self.data_magnitude_splitted = tools.get_splitted_magnitude_data(self.data_magnitude, self.indices)  #smoothed data
-        #self.data_magnitude_splitted = tools.get_splitted_magnitude_data(tools.get_magnitude(self.data), self.real_indices) #original data
+        #self.data_magnitude_splitted = tools.get_splitted_magnitude_data(self.data_magnitude, self.indices)  #smoothed data
+        self.data_magnitude_splitted = tools.get_splitted_magnitude_data(tools.get_magnitude(self.data), self.real_indices) #original data
 
 
 if __name__ == '__main__':

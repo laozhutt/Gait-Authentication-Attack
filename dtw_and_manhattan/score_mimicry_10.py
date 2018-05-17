@@ -17,9 +17,9 @@ from fastdtw import fastdtw
 
 if len(sys.argv)!=2:
 	'''
-	e.g. python score_10.py 04m
+	e.g. python score_owner_10.py 04m
 	'''
-	print "Usage: python score.py dirname"
+	print "Usage: python score_owner_10.py id"
 	exit()
 
 
@@ -27,7 +27,7 @@ test_session = sys.argv[1]
 
 
 ROOT = '/home/tiantian/onecycleattack/Gait-Authentication-Attack/dtw_and_manhattan'
-RESULTS_DIR = 'results/10_data_magnitude_splitted'
+RESULTS_DIR = 'pcc_data_splitted/mimicry_magnitude_ren_data_splitted'
 
 def train(x):
 	if 'seq0' in x:
@@ -60,7 +60,7 @@ def cal_fastdtw(cycle1, cycle2, rotate):
 if __name__ == '__main__':
 
 	'''
-	1. Make seq0 as train set and seq1 as test set.
+	1. Make train set and test set.
 	'''
 	#store paticipant's filename
 
@@ -72,7 +72,6 @@ if __name__ == '__main__':
 
 	#store the values correspongding to the filename
 	train_value_list = []
-	test_value_list = []
 	for train_session_name in train_list:
 		for cycle_train in cycle_train_list:
 			train_value = []
@@ -81,53 +80,54 @@ if __name__ == '__main__':
 				train_value.append(np.loadtxt(os.path.join(train_filepath, train_file)))
 		train_value_list.append(train_value)
 
-	for test_session_name in test_list:
-		for cycle_test in cycle_test_list:
-			test_value = []
-			test_filepath = os.path.join(ROOT, RESULTS_DIR, test_session_name, cycle_test)
-			for test_file in os.listdir(test_filepath):
-				test_value.append(np.loadtxt(os.path.join(test_filepath, test_file)))
-		test_value_list.append(test_value)
-
 
 	print 'Finish the data loading.'
 	
 
 
 	# init the directory
-	target_dir = os.path.join(ROOT, 'target', '10')
+	target_dir = os.path.join(ROOT, 'target', '10_mimicry')
 	if not os.path.exists(target_dir):
 		os.system('mkdir -p {0}'.format(target_dir))
 
 	'''
 	2. Calculate the similarity score and record.
 	'''
-	count = 0
-	#
-	count = count + 1
-	test_listpath = test_value_list[test_list.index(test_session)]
+	#each time we need test N sequence
 
-	with open (os.path.join(target_dir, test_session), 'w') as f:
-		for train_session in train_list:
-			min_score = 999999.0
-			#train_filepath = os.path.join(ROOT, RESULTS_DIR, train_session)
-			train_listpath = train_value_list[train_list.index(train_session)]
-		
-			for test_value in test_listpath:
+	for cycle_test_name in cycle_test_list:
+		test_listpath = []
+		test_filepath = os.path.join(ROOT, RESULTS_DIR, test_session, cycle_test_name)
+		for test_file in os.listdir(test_filepath):
+			test_listpath.append(np.loadtxt(os.path.join(test_filepath, test_file))) # get each sequence
+
+
+
+
+
+		count = 0
+		with open (os.path.join(target_dir, test_session), 'a') as f:
+			for train_session in train_list:
+				min_score = 999999.0
+				#train_filepath = os.path.join(ROOT, RESULTS_DIR, train_session)
+				train_listpath = train_value_list[train_list.index(train_session)]
+
 			
-				for train_value in train_listpath:
-					if train_session == test_session:
-						score = cal_fastdtw(test_value, train_value, True)
-					else:
-						score = cal_fastdtw(test_value, train_value, False)
-					if score < min_score:
-						min_score = score
+				for test_value in test_listpath:
+				
+					for train_value in train_listpath:
+						if train_session == test_session:
+							score = cal_fastdtw(test_value, train_value, False)
+						else:
+							score = cal_fastdtw(test_value, train_value, False)
+						if score < min_score:
+							min_score = score
 
-					
-			print str(count) + ' ' + test_session + ': finish comparing ' + train_session
-			f.write(train_session + ' ' + str(min_score) + '\n')
-			f.flush()
-	print test_session + ': finish all.'  
+						
+
+				f.write(train_session + '_' + cycle_test_name + ' ' + str(min_score) + '\n')
+				f.flush()
+  
 
 
 

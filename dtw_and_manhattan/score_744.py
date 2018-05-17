@@ -27,7 +27,7 @@ test_session = sys.argv[1]
 
 
 ROOT = '/home/tiantian/onecycleattack/Gait-Authentication-Attack/dtw_and_manhattan'
-RESULTS_DIR = 'results/744_data_magnitude_splitted'
+RESULTS_DIR = 'pcc_data_splitted/744_magnitude_ren_data_splitted'
 
 def train(x):
 	if 'seq0' in x:
@@ -37,7 +37,7 @@ def test(x):
 	if 'seq1' in x:
 		return x
 
-def cal_fastdtw(cycle1, cycle2):
+def cal_fastdtw(cycle1, cycle2, rotate):
     """Return fast dtw distance of the two cycles.
 
     :param cycle1: the first cycle stored the normalized maginitude data.
@@ -46,11 +46,15 @@ def cal_fastdtw(cycle1, cycle2):
     """
 
     min_distance, path = fastdtw(cycle1, cycle2, dist=euclidean)
-    
-    # for i in range(len(cycle1)):
-    #     distance, path = fastdtw(np.roll(cycle1,i), cycle2, dist=euclidean)
-    #     if distance < min_distance:
-    #         min_distance = distance
+
+    if rotate:
+    	for i in range(len(cycle1)):
+	        distance, path = fastdtw(np.roll(cycle1,i), cycle2, dist=euclidean)
+	        if distance < min_distance:
+	            min_distance = distance
+    else:
+    	pass
+	    
     return min_distance
 
 if __name__ == '__main__':
@@ -108,7 +112,11 @@ if __name__ == '__main__':
 			for test_value in test_listpath:
 			
 				for train_value in train_listpath:
-					score = cal_fastdtw(test_value, train_value)
+					if train_session == test_session:
+						score = cal_fastdtw(test_value, train_value, False)
+					else:
+						score = cal_fastdtw(test_value, train_value, False)
+					
 					if score < min_score:
 						min_score = score
 

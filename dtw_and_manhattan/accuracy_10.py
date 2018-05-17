@@ -1,6 +1,5 @@
 """
 accuracy on 744 dataset utilizing manhattan and dtw 
-
 author: tiantian
 date: 2018-4-30
 """
@@ -15,8 +14,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 ROOT = '/home/tiantian/onecycleattack/Gait-Authentication-Attack/dtw_and_manhattan'
-RESULTS_DIR = 'target/10'
-THRESHOLD_DIR = 'target/th_10'
+RESULTS_DIR = 'target_no_rotate/10_mimicry'
+THRESHOLD_DIR = 'target_no_rotate/th_10_mimicry'
 
 
 
@@ -27,8 +26,12 @@ if __name__ == '__main__':
 	TN = 0.0
 	#FAR = FP/(FP+TN)
 	#FRR = FN/(FN+TP)
+	FAR = []
+	FRR = []
 	far_list = []
 	frr_list = []
+	far_list.append(0.0)
+	frr_list.append(1.0)
 
 
 	filepath = os.path.join(ROOT, RESULTS_DIR)
@@ -70,9 +73,13 @@ if __name__ == '__main__':
 
 	th = 0.0
 	while(th <1):
+		FAR = []
+		FRR = []
 		with open(os.path.join(ROOT, 'result.txt'), 'a') as r:
+			
 
 			for filename in file_list:
+
 				with open(os.path.join(ROOT, THRESHOLD_DIR, filename),'r') as rf:
 					lines = rf.readlines()
 					max_num = float(lines[0].strip())
@@ -80,6 +87,10 @@ if __name__ == '__main__':
 
 
 				with open(os.path.join(filepath, filename),'r') as f:
+					TP = 0.0
+					FP = 0.0
+					FN = 0.0
+					TN = 0.0
 					for line in f.readlines():
 						acc = (float(line.strip().split(' ')[1]) - min_num) / (max_num - min_num)
 
@@ -104,16 +115,18 @@ if __name__ == '__main__':
 				#print FN
 				#print TN
 
-			FAR = (float)(FP)/(FP+TN)
-			FRR = (float)(FN)/(FN+TP)
-			far_list.append(FAR)
-			frr_list.append(FRR)
-			r.write(str(FAR) + ' ' + str(FRR) + '\n')
+					FAR.append((float)(FP)/(FP+TN))
+					FRR.append((float)(FN)/(FN+TP))
+
+			far_list.append(sum(FAR)/len(FAR))
+			frr_list.append(sum(FRR)/len(FRR))
+			r.write(str(sum(FAR)/len(FAR)) + ' ' + str(sum(FRR)/len(FRR)) + '\n')
 			r.flush()
 			print 'Threshold ' + str(th) + ' down.' 
 		th = th + 0.01
 
-
+	far_list.append(1.0)
+	frr_list.append(0.0)
 	'''
 	3. Plot curve.
 	'''
@@ -132,19 +145,9 @@ if __name__ == '__main__':
 	plt.plot(np.array(far_list), np.array(frr_list), 'r')
 
 	plt.title("ROC Curve")
-	plt.legend(loc='upper right', shadow=False)
+	#plt.legend(loc='upper right', shadow=False)
 	plt.ylabel('FRR')
 	plt.xlabel('FAR')
 
 	#plt.show()
 	plt.savefig("pic10" + ".png")
-
-
-
-
-
-
-
-
-
-	

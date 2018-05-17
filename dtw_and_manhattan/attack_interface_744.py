@@ -26,7 +26,7 @@ class dtw_manhattan(object):
 		self.data_interpolated = None
 		self.timestamps = None
 		self.data = None
-		self.sample_rate = 100
+		self.sample_rate = 50
 		self.data_smoothed = None
 		self.smoothing_factor = 0.3
 		
@@ -62,7 +62,7 @@ class dtw_manhattan(object):
 	False: attacker can't pass the victim's model
 	'''
 	def authFunc(self, victim, attack):
-		self.timestamps = timestamps = np.arange(0.0, 1.0, 0.1)
+		self.timestamps = np.arange(0.0, 1.0, 0.1)
 		self.data = attack
 		if len(timestamps) > len(data):
 			timestamps = timestamps[:len(data)]

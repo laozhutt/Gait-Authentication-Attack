@@ -55,7 +55,7 @@ if __name__ == '__main__':
             print('>>> file name: {0}'.format(file_path))
             cycle_generation = CycleGeneration(
                 os.path.join(DATA_SET_DIR, file_path),
-                sample_rate=100.0,
+                sample_rate=50.0,
                 subset_size=80,
                 # debug=True,
                 smoothing_factor=0.3
