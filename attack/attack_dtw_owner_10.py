@@ -1,5 +1,5 @@
 """
-accuracy on 744 dataset utilizing manhattan and dtw 
+5 owner data (other test) 
 author: tiantian
 date: 2018-4-30
 """
@@ -21,14 +21,14 @@ if len(sys.argv)!=2:
 	'''
 	e.g. python attack_dtw_owner_10.py 00m
 	'''
-	print "Usage: python attack_dtw_owner_10.py ID"
+	print "Usage: python attack_dtw_owner_10.py 00m"
 	exit()
 
 train_session = sys.argv[1]
 
 ROOT = '/home/tiantian/onecycleattack/Gait-Authentication-Attack/dtw_and_manhattan'
 RESULTS_DIR = 'pcc_data_splitted/owner_magnitude_ren_data_splitted'
-THRESHOLD_DIR = 'target/th_10_owner'
+THRESHOLD_DIR = 'target_pcc_10_best/th_10_owner'
 MIMICRY_DIR = 'pcc_data_splitted/mimicry_magnitude_ren_data_splitted'
 
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 	max_num = 0.0
 	min_num = 0.0
 
-	TH = 0.051
+	TH = 0.156
 	#FAR = FP/(FP+TN)
 	#FRR = FN/(FN+TP)
 	with open(os.path.join(ROOT, THRESHOLD_DIR, train_session),'r') as rf:
@@ -75,8 +75,10 @@ if __name__ == '__main__':
 	'''
 	#store paticipant's filename
 
-	train_list = os.listdir(os.path.join(ROOT, RESULTS_DIR))
-	test_list = os.listdir(os.path.join(ROOT, RESULTS_DIR))
+	#train_list = os.listdir(os.path.join(ROOT, RESULTS_DIR))
+	#test_list = os.listdir(os.path.join(ROOT, RESULTS_DIR))
+	test_list = ['03f','04m','06m','07f','09f']
+	#test_list = ['00m','01f','02m','05m','08f']
 
 	cycle_train_list = ['00','01','10','11','20']
 	cycle_test_list = ['21','30','31','40','41']
@@ -84,12 +86,12 @@ if __name__ == '__main__':
 	#train set includs the self data from owner and mimicry
 	for cycle_train_name in cycle_train_list:
 		train_values = []
-		train_filepath = os.path.join(ROOT, RESULTS_DIR, train_session, cycle_train_name)
-		for train_file in os.listdir(train_filepath):
-			train_values.append(np.loadtxt(os.path.join(train_filepath, train_file)))
 		train_filepath = os.path.join(ROOT, MIMICRY_DIR, train_session, cycle_train_name)
 		for train_file in os.listdir(train_filepath):
 			train_values.append(np.loadtxt(os.path.join(train_filepath, train_file)))
+		# train_filepath = os.path.join(ROOT, MIMICRY_DIR, train_session, cycle_train_name)
+		# for train_file in os.listdir(train_filepath):
+		# 	train_values.append(np.loadtxt(os.path.join(train_filepath, train_file)))
 
 
 
@@ -112,37 +114,41 @@ if __name__ == '__main__':
 
 			min_score = 999999.0
 			for test_value in test_values:
+				min_score = 999999.0
 				for train_value in train_values:
 					score = cal_fastdtw(test_value, train_value, False)
 					if score < min_score:
 						min_score = score
 
-			acc = (min_score - min_num) / (max_num - min_num)
-
-
-			if train_session == test_session:
+				acc = (min_score - min_num) / (max_num - min_num)
+				#acc = min_score
 				print min_score
-				if acc <= TH:
-					TP = TP + 1
-					print 'TP ' + str(TP)
-				else:
-					FN = FN + 1
-					print 'FN ' + str(FN)
-			else:
-				if acc <= TH:
-					FP = FP + 1
-					print 'FP ' + str(FP)
-				else:
-					TN = TN + 1
-					print 'TN ' + str(TN)
+				print acc
 
-	print TP
-	print FN
-	print FP
-	print TN
-	print 'owner'
-	print ((float)(TP)/(TP+FN))
-	print ((float)(TN)/(TN+FP))
+
+				if train_session == test_session:
+					print min_score
+					if acc <= TH:
+						TP = TP + 1
+						print 'TP ' + str(TP)
+					else:
+						FN = FN + 1
+						print 'FN ' + str(FN)
+				else:
+					if acc <= TH:
+						FP = FP + 1
+						print 'FP ' + str(FP)
+					else:
+						TN = TN + 1
+						print 'TN ' + str(TN)
+
+				print TP
+				print FN
+				print FP
+				print TN
+				#print 'owner'
+				#print ((float)(TP)/(TP+FN))
+				print ((float)(TN)/(TN+FP))
 
 
 

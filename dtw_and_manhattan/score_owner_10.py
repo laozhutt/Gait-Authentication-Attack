@@ -28,6 +28,7 @@ test_session = sys.argv[1]
 
 ROOT = '/home/tiantian/onecycleattack/Gait-Authentication-Attack/dtw_and_manhattan'
 RESULTS_DIR = 'pcc_data_splitted/owner_magnitude_ren_data_splitted'
+MIMICRY_DIR = 'pcc_data_splitted/mimicry_magnitude_ren_data_splitted'
 
 def train(x):
 	if 'seq0' in x:
@@ -63,9 +64,11 @@ if __name__ == '__main__':
 	1. Make train set and test set.
 	'''
 	#store paticipant's filename
+	train_list = ['00m','01f','02m','05m','08f']
+	test_list = ['00m','01f','02m','05m','08f']
 
-	train_list = os.listdir(os.path.join(ROOT, RESULTS_DIR))
-	test_list = os.listdir(os.path.join(ROOT, RESULTS_DIR))
+	#train_list = os.listdir(os.path.join(ROOT, RESULTS_DIR))
+	#test_list = os.listdir(os.path.join(ROOT, RESULTS_DIR))
 
 	cycle_train_list = ['00','01','10','11','20']
 	cycle_test_list = ['21','30','31','40','41']
@@ -74,11 +77,15 @@ if __name__ == '__main__':
 	train_value_list = []
 	for train_session_name in train_list:
 		for cycle_train in cycle_train_list:
-			train_value = []
+			train_values = []
+			# trainset for 00m from the mimic set
+			# if train_session_name == '00m':
+			# 	train_filepath = os.path.join(ROOT, MIMICRY_DIR, train_session_name, cycle_train)
+			# else:
 			train_filepath = os.path.join(ROOT, RESULTS_DIR, train_session_name, cycle_train)
 			for train_file in os.listdir(train_filepath):
-				train_value.append(np.loadtxt(os.path.join(train_filepath, train_file)))
-		train_value_list.append(train_value)
+				train_values.append(np.loadtxt(os.path.join(train_filepath, train_file)))
+		train_value_list.append(train_values)
 
 
 	print 'Finish the data loading.'
@@ -96,10 +103,13 @@ if __name__ == '__main__':
 	#each time we need test N sequence
 
 	for cycle_test_name in cycle_test_list:
-		test_listpath = []
-		test_filepath = os.path.join(ROOT, RESULTS_DIR, test_session, cycle_test_name)
+		test_values = []
+		if test_session == '00m':
+			test_filepath = os.path.join(ROOT, MIMICRY_DIR, test_session, cycle_test_name)
+		else:
+			test_filepath = os.path.join(ROOT, RESULTS_DIR, test_session, cycle_test_name)
 		for test_file in os.listdir(test_filepath):
-			test_listpath.append(np.loadtxt(os.path.join(test_filepath, test_file))) # get each sequence
+			test_values.append(np.loadtxt(os.path.join(test_filepath, test_file))) # get each sequence
 
 
 
@@ -110,12 +120,13 @@ if __name__ == '__main__':
 			for train_session in train_list:
 				min_score = 999999.0
 				#train_filepath = os.path.join(ROOT, RESULTS_DIR, train_session)
-				train_listpath = train_value_list[train_list.index(train_session)]
+				train_values = train_value_list[train_list.index(train_session)]
 
 			
-				for test_value in test_listpath:
+				for test_value in test_values:
+					min_score = 999999.0# for test
 				
-					for train_value in train_listpath:
+					for train_value in train_values:
 						if train_session == test_session:
 							score = cal_fastdtw(test_value, train_value, False)
 						else:
@@ -123,10 +134,11 @@ if __name__ == '__main__':
 						if score < min_score:
 							min_score = score
 
+
 						
 
-				f.write(train_session + '_' + cycle_test_name + ' ' + str(min_score) + '\n')
-				f.flush()
+					f.write(train_session + '_' + cycle_test_name + ' ' + str(min_score) + '\n')
+					f.flush()
   
 
 

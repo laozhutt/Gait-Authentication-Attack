@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
 	num_list = [i for i in range(101)]
 	percentage_list = [0.0 for i in range(101)]
-	with open(os.path.join(LOG_DIR,'log'),'r') as f:
+	with open(os.path.join(LOG_DIR,'log_mimicry'),'r') as f:
 		for line in f.readlines():
 			value = int(line.strip().split(' ')[1])
 			for i in range(101):
@@ -28,10 +28,13 @@ if __name__ == '__main__':
 
 
 
-	percentage_list = [v / 745 for v in percentage_list]
+	percentage_list = [v / 1000 for v in percentage_list]
 	print '1 attempt: ' + str(percentage_list[1])
+	print '5 attempts: ' + str(percentage_list[5])
 	print '10 attempts: ' + str(percentage_list[10])
 	print '50 attempts: ' + str(percentage_list[50])
+	print '100 attempts: ' + str(percentage_list[100])
+
 	
 
 	'''
@@ -57,4 +60,4 @@ if __name__ == '__main__':
 	plt.xlabel('Number of attempts')
 
 	#plt.show()
-	plt.savefig("attack" + ".png")
+	plt.savefig("attack_mimicry_10" + ".png")

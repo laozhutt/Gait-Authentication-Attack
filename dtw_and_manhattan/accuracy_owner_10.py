@@ -93,6 +93,10 @@ if __name__ == '__main__':
 					TN = 0.0
 					for line in f.readlines():
 						acc = (float(line.strip().split(' ')[1]) - min_num) / (max_num - min_num)
+						#acc = float(line.strip().split(' ')[1])
+						#print acc
+
+						
 
 						#find the acc of owner
 						if filename in line.strip().split(' ')[0]:
